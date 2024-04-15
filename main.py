@@ -1,8 +1,8 @@
 from dotenv import load_dotenv
 import os
-import telebot
-import pandas as pd
-from telebot.types import (
+import telebot  # type: ignore
+import pandas as pd  # type: ignore
+from telebot.types import (  # type: ignore
     InlineKeyboardButton,
     InlineKeyboardMarkup,
     CallbackQuery,
@@ -16,7 +16,7 @@ from openai import OpenAI
 doing_search = []
 
 df = pd.read_excel("data.xlsx")
-blacklist = []
+blacklist: list[str] = []
 
 load_dotenv()
 token = os.getenv("TOKEN")
@@ -28,7 +28,7 @@ print("Bot Started")
 
 
 @bot.callback_query_handler(func=lambda x: True)
-def button_callback(call: CallbackQuery):
+def button_callback(call: CallbackQuery) -> None:  # type: ignore
     if call.data == "cat":
         bot.answer_callback_query(call.id)
         handle_categories(call.message)
@@ -41,7 +41,7 @@ def button_callback(call: CallbackQuery):
 
 
 @bot.message_handler(commands=["start", "help"])
-def handle_start(message: Message):
+def handle_start(message: Message) -> None:  # type: ignore
 
     add_data_to_db("start", str(message.from_user.id))
 
@@ -66,7 +66,7 @@ def handle_start(message: Message):
 
 
 @bot.message_handler(commands=["categories"])
-def handle_categories(message: Message):
+def handle_categories(message: Message) -> None:  # type: ignore
     categories_list = list(sorted(df["category"].unique()))
     categories_text = "\n".join(
         f"{i + 1}. {category}" for i, category in enumerate(categories_list)
@@ -86,7 +86,7 @@ def handle_categories(message: Message):
 
 
 @bot.message_handler(commands=["apps"])
-def apps_start(message: Message):
+def apps_start(message: Message) -> None:  # type: ignore
     add_data_to_db("apps", str(message.from_user.id))
     bot.send_message(
         message.chat.id,
@@ -95,7 +95,7 @@ def apps_start(message: Message):
     bot.register_next_step_handler(message, handle_apps)
 
 
-def handle_apps(message: Message):
+def handle_apps(message: Message) -> None:  # type: ignore
     try:
         if message.text is not None:
             if message.text.strip() != "/apps":
@@ -143,7 +143,7 @@ def handle_apps(message: Message):
 
 
 @bot.message_handler(commands=["contact"])
-def handle_contact(message: Message):
+def handle_contact(message: Message) -> None:  # type: ignore
     if message.from_user.id not in blacklist:
         bot.send_message(
             message.chat.id,
@@ -158,7 +158,7 @@ def handle_contact(message: Message):
         )
 
 
-def forward_contact(message: Message):
+def forward_contact(message: Message) -> None:  # type: ignore
     if message.text != "/cancel":
         user_id = message.from_user.id
         username = message.from_user.username
@@ -178,7 +178,7 @@ def forward_contact(message: Message):
 
 
 @bot.message_handler(commands=["reply"])
-def handle_reply(message: Message):
+def handle_reply(message: Message) -> None:  # type: ignore
     try:
         _, user_id, reply_text = message.text.split(" ", 2)
         user_id = int(user_id)
@@ -200,7 +200,7 @@ def handle_reply(message: Message):
 
 
 @bot.message_handler(commands=["reload_df"])
-def handle_reload_df(message: Message):
+def handle_reload_df(message: Message) -> None:  # type: ignore
     global df
 
     if message.from_user.id == int(1038099964):
@@ -213,7 +213,7 @@ def handle_reload_df(message: Message):
         )
 
 
-def get_all_apps():
+def get_all_apps() -> str:
     all_apps = ""
     for id, app in df.iterrows():
         app_info = f"{id + 1}, {app['name']}, {app['description']}\n"
@@ -222,7 +222,7 @@ def get_all_apps():
     return all_apps
 
 
-def get_line_by_app_row(row_number):
+def get_line_by_app_row(row_number: int) -> str:
     try:
         if row_number != 0:
             app = df.iloc[row_number - 1]
@@ -237,7 +237,7 @@ def get_line_by_app_row(row_number):
 
 
 @bot.message_handler(commands=["search"])
-def search_starting(message: Message):
+def search_starting(message: Message) -> None:  # type: ignore
     if message.from_user.id not in doing_search:
         bot.send_message(
             message.chat.id,
@@ -254,7 +254,7 @@ def search_starting(message: Message):
         )
 
 
-def search_handling(message: Message, flag_send_msg=True, searching_message=None):
+def search_handling(message: Message, flag_send_msg=True, searching_message=None) -> None:  # type: ignore
     try:
         if message.text is not None:
             if message.text.strip() != "/apps":
@@ -298,9 +298,9 @@ def search_handling(message: Message, flag_send_msg=True, searching_message=None
                                     else:
                                         final_response += " "
 
-                                final_response = final_response.split()
+                                final_response_list = final_response.split()
                                 final2 = ""
-                                for elem in final_response:
+                                for elem in final_response_list:
                                     final2 += get_line_by_app_row(int(elem))
 
                                 if final2 != "":
@@ -355,7 +355,7 @@ def search_handling(message: Message, flag_send_msg=True, searching_message=None
         )
 
 
-def add_data_to_db(command_used, user_id):
+def add_data_to_db(command_used: str, user_id: str) -> None:
     conn = sql.connect("users_data.db")
     c = conn.cursor()
 
@@ -370,7 +370,7 @@ def add_data_to_db(command_used, user_id):
     conn.close()
 
 
-def get_all_user_ids():
+def get_all_user_ids() -> list:
     conn = sql.connect("users_data.db")
     c = conn.cursor()
 
@@ -411,4 +411,5 @@ def message_all_handling(message: Message):
         )
 
 
-bot.infinity_polling()
+if __name__ == "__main__":
+    bot.infinity_polling()
